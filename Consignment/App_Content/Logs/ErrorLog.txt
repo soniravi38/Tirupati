@@ -1,0 +1,81 @@
+03-01-2026 21:12:44 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Thread was being aborted.
+10-05-2026 21:37:09 | Page:ViewLRBook | Db:tirupati_ | Method/Event:gvReport_RowCommand | SP: | User:admin | Err:Thread was being aborted.
+10-05-2026 21:43:29 | Page:ViewLRBook | Db:tirupati_ | Method/Event:gvReport_RowCommand | SP: | User:admin | Err:Thread was being aborted.
+10-05-2026 21:44:33 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:Error converting data type varchar(max) to decimal.
+10-05-2026 22:08:08 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:Error converting data type varchar(max) to decimal.
+10-05-2026 22:10:38 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:Error converting data type varchar(max) to decimal.
+10-05-2026 22:11:58 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:Error converting data type varchar(max) to decimal.
+10-05-2026 22:14:46 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:Error converting data type varchar(max) to decimal.
+10-05-2026 22:17:03 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:Error converting data type varchar(max) to decimal.
+13-05-2026 17:24:17 | Page:ReportViewer | Db:hpexpress_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+13-05-2026 17:26:54 | Page:ReportViewer | Db:hpexpress_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+13-05-2026 17:27:02 | Page:ReportViewer | Db:hpexpress_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+13-05-2026 17:27:39 | Page:ReportViewer | Db:hpexpress_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+13-05-2026 17:30:28 | Page:ReportViewer | Db:hpexpress_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+11-07-2026 20:53:31 | Page:CompanyMaster | Db:tirupati_ | Method/Event:FillData | SP:Proc_CompanyMaster | User:admin | Err:Column 'BookingOfficeAdd' does not belong to table Table.
+11-07-2026 20:54:29 | Page:CompanyMaster | Db:tirupati_ | Method/Event:FillData | SP:Proc_CompanyMaster | User:admin | Err:Column 'BookingOfficeAdd' does not belong to table Table.
+11-07-2026 20:57:40 | Page:CompanyMaster | Db:tirupati_ | Method/Event:FillData | SP:Proc_CompanyMaster | User:admin | Err:Column 'BookingOfficeAdd' does not belong to table Table.
+12-07-2026 13:40:50 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:41:25 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:41:32 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:41:32 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_BookLR | User:admin | Err:@GSTPay is not a parameter for procedure Proc_BookLR.
+12-07-2026 13:42:31 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:42:51 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:47:36 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_BookLR | User:admin | Err:@GSTPay is not a parameter for procedure Proc_BookLR.
+12-07-2026 13:47:42 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:47:53 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:48:19 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:@InvoiceUnit is not a parameter for procedure Proc_InvoiceDetails.
+12-07-2026 13:48:28 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:48:42 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:48:58 | Page:AddBookLR | Db:tirupati_ | Method/Event:GetLCCount | SP:Proc_BookLR | User:admin | Err:Error converting data type varchar to numeric.
+12-07-2026 13:53:01 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:@InvoiceUnit is not a parameter for procedure Proc_InvoiceDetails.
+12-07-2026 13:56:01 | Page:AddBookLR | Db:tirupati_ | Method/Event:MoveNext | SP:Proc_InvoiceDetails | User:admin | Err:@InvoiceUnit is not a parameter for procedure Proc_InvoiceDetails.
+12-07-2026 13:57:20 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 13:57:28 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 13:58:51 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 13:59:58 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:00:19 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:00:25 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:00:36 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:00:56 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:02:39 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:04:07 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:06:10 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:07:18 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:07:39 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 0.
+12-07-2026 14:17:15 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:18:46 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:19:34 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:19:55 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:21:10 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:24:31 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:24:37 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:25:05 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:26:39 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:There is no row at position 10.
+12-07-2026 14:27:13 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+12-07-2026 14:28:02 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+12-07-2026 14:32:19 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'GSTPay' does not belong to table .
+12-07-2026 14:32:32 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'USERNAME' does not belong to table .
+12-07-2026 14:33:05 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'USERNAME' does not belong to table .
+12-07-2026 14:33:14 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'USERNAME' does not belong to table .
+12-07-2026 14:33:31 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'USERNAME' does not belong to table .
+12-07-2026 14:34:57 | Page:ReportViewer | Db:tirupati_ | Method/Event:btnConsignor_Click | SP:  | User:admin | Err:Column 'USERNAME' does not belong to table .
+09-08-2026 17:33:51 | Page:ViewLRBook | Db:hpexpress_ | Method/Event:gvReport_RowCommand | SP: | User:admin | Err:Thread was being aborted.
+09-08-2026 17:35:04 | Page:ViewLRBook | Db:hpexpress_ | Method/Event:gvReport_RowCommand | SP: | User:admin | Err:Thread was being aborted.
+09-08-2026 20:14:33 | Page:ConsgReport | Db:hpexpress_ | Method/Event:fillList | SP:[Proc_ConsignmentReportLR] | User:admin | Err:Invalid column name 'Consgname'.
+Invalid column name 'ConsgAdd'.
+Invalid column name 'ConsState'.
+Invalid column name 'ConsgGSTNo'.
+Invalid column name 'Consgname'.
+Invalid column name 'ConsgAdd'.
+Invalid column name 'ConsState'.
+Invalid column name 'ConsgGSTNo'.
+09-08-2026 20:15:07 | Page:ConsgReport | Db:hpexpress_ | Method/Event:fillList | SP:[Proc_ConsignmentReportLR] | User:admin | Err:Invalid column name 'Consgname'.
+Invalid column name 'ConsgAdd'.
+Invalid column name 'ConsState'.
+Invalid column name 'ConsgGSTNo'.
+Invalid column name 'Consgname'.
+Invalid column name 'ConsgAdd'.
+Invalid column name 'ConsState'.
+Invalid column name 'ConsgGSTNo'.
+09-08-2026 20:17:23 | Page:ViewLRBook | Db:hpexpress_ | Method/Event:gvReport_RowCommand | SP: | User:admin | Err:Thread was being aborted.
