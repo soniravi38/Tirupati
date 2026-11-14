@@ -285,6 +285,11 @@ namespace Consignment.ConsignmentPanel
         protected global::System.Web.UI.WebControls.TextBox txtProduct;
 
         /// <summary>
+        /// litProducts control (Product Description datalist options).
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litProducts;
+
+        /// <summary>
         /// ddlunit control.
         /// </summary>
         /// <remarks>

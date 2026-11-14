@@ -219,6 +219,12 @@
                                             <p>Unit</p>
                                         </a>
                                     </li>
+                                    <li id="mnuProduct" class="nav-item" runat="server">
+                                        <a href="ListProduct.aspx" class="nav-link">
+                                            <i class="fa fa-box"></i>
+                                            <p>Product</p>
+                                        </a>
+                                    </li>
                                     <li id="mnuSize" class="nav-item" runat="server">
                                         <a href="ListSize.aspx" class="nav-link">
                                             <i class="fa fa-ruler "></i>
@@ -461,6 +467,26 @@
         <script src="../Content/Admin/dist/js/pages/dashboard.js"></script>
         <script src="../Content/Common/Admin.js"></script>
         <script src="../Content/Select2.js"></script>
+        <script type="text/javascript">
+            // Session keep-alive: jab tak page khula hai, har 4 minute me server ko ping karta hai
+            // taki lambi data entry (jaise ek LR me 10+ invoices) ke beech session expire na ho.
+            (function () {
+                var keepAliveUrl = '../KeepAlive.ashx';
+                var warned = false;
+                function ping() {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', keepAliveUrl + '?t=' + new Date().getTime(), true);
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 4 && xhr.status === 200 && xhr.responseText === '0' && !warned) {
+                            warned = true;
+                            alert('Your session has expired. Please note down the entered data and login again before saving.');
+                        }
+                    };
+                    xhr.send();
+                }
+                setInterval(ping, 4 * 60 * 1000);
+            })();
+        </script>
     </form>
 </body>
 </html>

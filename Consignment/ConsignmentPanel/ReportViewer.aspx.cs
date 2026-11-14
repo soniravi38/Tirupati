@@ -50,7 +50,7 @@ namespace Consignment.ConsignmentPanel
             DataTable dt = con.GetDatatable("Select * from Vw_RptLRBook where Bookid='" + BookId + "'");
             if (dt.Rows[0]["MType"].ToString() == "B")
             {
-                int GroupId = Convert.ToInt32((con.GetDatatable("Select * from Vw_RptLRBook where Bookid='" + BookId + "'")).Rows[0]["GroupId"]);
+                long GroupId = Convert.ToInt64((con.GetDatatable("Select * from Vw_RptLRBook where Bookid='" + BookId + "'")).Rows[0]["GroupId"]);
                 dt = con.GetDatatable("Select * from Vw_RptLRBook where groupid='" + GroupId + "'");
             }
             string spName = "";
@@ -129,7 +129,7 @@ namespace Consignment.ConsignmentPanel
                     {
                         for (int e = 0; e < EwayDt.Rows.Count; e++)
                         {
-                            EwayDetails += " [No.:" + EwayDt.Rows[e]["EwayBillNo"].ToString() + ",Date:" + EwayDt.Rows[e]["BillDate"].ToString() + ",Upto:" + EwayDt.Rows[e]["BillUptoDate"].ToString() + "] ";
+                            EwayDetails += " [No.:" + EwayDt.Rows[e]["EwayBillNo"].ToString() + ",Date:" + EwayDt.Rows[e]["BillDate"].ToString() + ",Upto:" + UptoText(EwayDt.Rows[e]) + "] ";
                         }
                     }
 
@@ -942,7 +942,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1049,7 +1049,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1149,7 +1149,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1249,7 +1249,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1348,7 +1348,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1447,7 +1447,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1546,7 +1546,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1645,7 +1645,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1744,7 +1744,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1844,7 +1844,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -1943,7 +1943,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -2045,7 +2045,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -2144,7 +2144,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -2244,7 +2244,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -2319,7 +2319,7 @@ namespace Consignment.ConsignmentPanel
                     cell.BorderWidthRight = 0;
                     table.AddCell(cell);
 
-                    cell = new PdfPCell(new Phrase(EwayDt.Rows[LoopDigit]["BillUptoDate"].ToString(), Label));
+                    cell = new PdfPCell(new Phrase(UptoText(EwayDt.Rows[LoopDigit]), Label));
                     cell.HorizontalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.VerticalAlignment = PdfPCell.ALIGN_CENTER;
                     cell.Colspan = 1;
@@ -2684,7 +2684,7 @@ namespace Consignment.ConsignmentPanel
             DataTable dt = con.GetDatatable("Select * from Vw_RptLRBook where Bookid='" + BookId + "'");
             if (dt.Rows[0]["MType"].ToString() == "B")
             {
-                int GroupId = Convert.ToInt32((con.GetDatatable("Select * from Vw_RptLRBook where Bookid='" + BookId + "'")).Rows[0]["GroupId"]);
+                long GroupId = Convert.ToInt64((con.GetDatatable("Select * from Vw_RptLRBook where Bookid='" + BookId + "'")).Rows[0]["GroupId"]);
                 dt = con.GetDatatable("Select * from Vw_RptLRBook where groupid='" + GroupId + "'");
             }
             string spName = "";
@@ -2753,7 +2753,7 @@ namespace Consignment.ConsignmentPanel
                     {
                         for (int e = 0; e < EwayDt.Rows.Count; e++)
                         {
-                            EwayDetails += " [No.:" + EwayDt.Rows[e]["EwayBillNo"].ToString() + ",Date:" + EwayDt.Rows[e]["BillDate"].ToString() + ",Upto:" + EwayDt.Rows[e]["BillUptoDate"].ToString() + "] ";
+                            EwayDetails += " [No.:" + EwayDt.Rows[e]["EwayBillNo"].ToString() + ",Date:" + EwayDt.Rows[e]["BillDate"].ToString() + ",Upto:" + UptoText(EwayDt.Rows[e]) + "] ";
                         }
                     }
 
@@ -3846,6 +3846,17 @@ namespace Consignment.ConsignmentPanel
             fs.Close();
             fs.Dispose();
         }
+        // Valid Upto blank ho (ya purana default 01-01-1900 save ho) to "-" dikhao.
+        // Khaali (padding) rows ke liye blank hi rehne do.
+        private string UptoText(DataRow r)
+        {
+            string ewayNo = Convert.ToString(r["EwayBillNo"]).Trim();
+            if (ewayNo == "") return "";
+            string upto = Convert.ToString(r["BillUptoDate"]).Trim();
+            if (upto == "" || upto.StartsWith("01-01-1900") || upto.StartsWith("1900-01-01")) return "-";
+            return upto;
+        }
+
         private string FolderCheck(string FolderName)
         {
             string ServerPath = string.Empty;

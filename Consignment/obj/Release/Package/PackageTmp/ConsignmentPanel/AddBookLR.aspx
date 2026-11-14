@@ -1,7 +1,7 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/ConsignmentPanel/_Consignment.Master" AutoEventWireup="true" Async="true" CodeBehind="AddBookLR.aspx.cs" Inherits="Consignment.ConsignmentPanel.AddBookLR" %>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    <asp:ScriptManager runat="server"></asp:ScriptManager>
+    <asp:ScriptManager runat="server" AsyncPostBackTimeout="600"></asp:ScriptManager>
     <asp:UpdatePanel ID="Update1" runat="server">
         <ContentTemplate>
 
@@ -13,6 +13,27 @@
                 function initdropdown() {
 
                     $('.searchable').select2();
+
+                    // Invoice Value: optional; sirf digits, comma (,) aur decimal (.) allow
+                    // (Admin.js ka koi purana number-only filter comma/decimal na roke, isliye keypress yahin rok diya)
+                    $('.digit11').off('keypress keydown keyup input paste.inv').on('keypress.inv', function (e) {
+                        e.stopPropagation();
+                        var ch = String.fromCharCode(e.which || e.keyCode);
+                        if (e.which > 31 && !/[0-9.,]/.test(ch)) { e.preventDefault(); }
+                    }).on('input paste.inv', function () {
+                        var el = this;
+                        setTimeout(function () {
+                            var v = el.value.replace(/[^0-9.,]/g, '');
+                            var i = v.indexOf('.');
+                            if (i >= 0) { v = v.substring(0, i + 1) + v.substring(i + 1).replace(/[.,]/g, ''); }
+                            if (el.value !== v) { el.value = v; }
+                        }, 0);
+                    });
+
+                    // Product dropdown: click par poori list dikhao
+                    $('.product-list').off('mousedown.prod').on('mousedown.prod', function () {
+                        if (this.value === '' && this.showPicker) { try { this.showPicker(); } catch (e) { } }
+                    });
 
 
                 }
@@ -217,7 +238,8 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Product Description</label><span class="Star">*</span>
-                                        <asp:TextBox ID="txtProduct" runat="server" autocomplete="off" CssClass="form-control"></asp:TextBox>
+                                        <asp:TextBox ID="txtProduct" runat="server" autocomplete="off" CssClass="form-control product-list" list="dlProducts" MaxLength="50" placeholder="--Select or type Product--"></asp:TextBox>
+                                        <datalist id="dlProducts"><asp:Literal ID="litProducts" runat="server" Mode="PassThrough"></asp:Literal></datalist>
                                     </div>
                                 </div>
 

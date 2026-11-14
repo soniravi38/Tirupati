@@ -13,6 +13,7 @@ using System.Collections;
 using static System.Net.WebRequestMethods;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Consignment.ConsignmentPanel
 {
@@ -29,6 +30,13 @@ namespace Consignment.ConsignmentPanel
         #region [pageload]
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Session expire ho chuka ho to crash (yellow error page) ki jagah seedha login par bhejo
+            if (Session["UserId"] == null || Session["UserName"] == null || Session["Database_"] == null)
+            {
+                Response.Redirect("Default.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+                return;
+            }
             divsave.Visible = false;
             hfbrid.Value = (cm.GetUserDetails().Rows[0]["BranchId"]).ToString();
             if(Session["Database_"].ToString() == "tirupati_")
@@ -45,6 +53,7 @@ namespace Consignment.ConsignmentPanel
                 
             }
             lblSize.Font.Bold = true;
+            FillProducts();
             if (!IsPostBack)
             {
                 FillConsignor();
@@ -259,6 +268,50 @@ namespace Consignment.ConsignmentPanel
                 cm.WriteLog(DateTime.Now.ToString() + " | Page:" + Path.GetFileNameWithoutExtension(Page.AppRelativeVirtualPath) + " | Db:" + Session["Database_"] + " | Method/Event:" + System.Reflection.MethodBase.GetCurrentMethod().Name + " | SP:" + spName + " | User:" + Session["UserName"].ToString() + " | Err:" + ex.Message.ToString());
             }
         }
+        // Product Description dropdown (datalist): tblProduct master se list
+        private void FillProducts()
+        {
+            string spName = "Proc_Product";
+            try
+            {
+                ArrayList pn = new ArrayList(); ArrayList pv = new ArrayList();
+                pn.Add("@Action"); pv.Add("List");
+                DataSet pds = con.GetDataSetFromSP(spName, pn, pv);
+                StringBuilder sb = new StringBuilder();
+                if (pds.Tables.Count > 0)
+                {
+                    foreach (DataRow r in pds.Tables[0].Rows)
+                    {
+                        sb.Append("<option value=\"").Append(HttpUtility.HtmlAttributeEncode(r["ProductName"].ToString())).Append("\"></option>");
+                    }
+                }
+                litProducts.Text = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                cm.WriteLog(DateTime.Now.ToString() + " | Page:" + Path.GetFileNameWithoutExtension(Page.AppRelativeVirtualPath) + " | Db:" + Session["Database_"] + " | Method/Event:FillProducts | SP:" + spName + " | User:" + Convert.ToString(Session["UserName"]) + " | Err:" + ex.Message.ToString());
+            }
+        }
+
+        // Naya product type kiya ho to master me jod do (pehle se ho to kuch nahi hota)
+        private void SaveProduct(string productName)
+        {
+            if (string.IsNullOrWhiteSpace(productName)) return;
+            string spName = "Proc_Product";
+            try
+            {
+                ArrayList pn = new ArrayList(); ArrayList pv = new ArrayList();
+                pn.Add("@Action"); pv.Add("AddIfNotExists");
+                pn.Add("@ProductName"); pv.Add(productName.Trim());
+                pn.Add("@UserId"); pv.Add(Convert.ToInt32(Session["UserId"]));
+                con.ExecuteQueryByStoreProcedureWithParameter(spName, pn, pv);
+            }
+            catch (Exception ex)
+            {
+                cm.WriteLog(DateTime.Now.ToString() + " | Page:" + Path.GetFileNameWithoutExtension(Page.AppRelativeVirtualPath) + " | Db:" + Session["Database_"] + " | Method/Event:SaveProduct | SP:" + spName + " | User:" + Convert.ToString(Session["UserName"]) + " | Err:" + ex.Message.ToString());
+            }
+        }
+
         private void FillUnit()
         {
             ParameterName = new ArrayList();
@@ -2308,6 +2361,45 @@ namespace Consignment.ConsignmentPanel
             }
             return BookId;
         }
+
+        // Multi-user safe: is user ne jo LR abhi save kiya, sirf usi ka BookId lao
+        // (MaxBookId() poore table ka latest deta hai - kisi aur user ka LR bhi ho sakta hai)
+        public string GetBookIdByLrNo(string LrNo)
+        {
+            return GetSingleBookId("SELECT MAX(BookId) AS BookId FROM tblBookLR WHERE BookLrNo = @LrNo", "@LrNo", LrNo);
+        }
+
+        public string GetBookIdByGroupId(long GroupId)
+        {
+            return GetSingleBookId("SELECT MAX(BookId) AS BookId FROM tblBookLR WHERE GroupId = @GroupId", "@GroupId", GroupId.ToString());
+        }
+
+        private string GetSingleBookId(string query, string paramName, string paramValue)
+        {
+            string BookId = "";
+            try
+            {
+                ArrayList pn = new ArrayList(); ArrayList pv = new ArrayList();
+                pn.Add(paramName); pv.Add(paramValue);
+                DataTable t = con.GetDataTableFromTable(query, pn, pv);
+                if (t.Rows.Count > 0 && t.Rows[0]["BookId"] != DBNull.Value)
+                {
+                    BookId = t.Rows[0]["BookId"].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                cm.WriteLog(DateTime.Now.ToString() + " | Page:" + Path.GetFileNameWithoutExtension(Page.AppRelativeVirtualPath) + " | Db:" + Session["Database_"] + " | Method/Event:GetSingleBookId | SP: | User:" + Convert.ToString(Session["UserName"]) + " | Err:" + ex.Message.ToString());
+            }
+            return BookId;
+        }
+
+        // Multi-LR batch ke liye unique GroupId (pehle 5-digit OTP use hota tha jo users ke beech repeat ho sakta tha)
+        private string NewGroupId()
+        {
+            int userId = Convert.ToInt32(Session["UserId"]) % 1000;
+            return DateTime.Now.ToString("yyMMddHHmmssfff") + userId.ToString("000");
+        }
         #endregion
 
         #region[Events]
@@ -2316,7 +2408,7 @@ namespace Consignment.ConsignmentPanel
             int check = 0;
             if (InvoiceValue1.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue1.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue1.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2324,7 +2416,7 @@ namespace Consignment.ConsignmentPanel
             }
             if (InvoiceValue2.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue2.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue2.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2332,7 +2424,7 @@ namespace Consignment.ConsignmentPanel
             }
             if (InvoiceValue3.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue3.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue3.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2340,7 +2432,7 @@ namespace Consignment.ConsignmentPanel
             }
             if (InvoiceValue4.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue4.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue4.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2348,7 +2440,7 @@ namespace Consignment.ConsignmentPanel
             }
             if (InvoiceValue5.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue5.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue5.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2356,7 +2448,7 @@ namespace Consignment.ConsignmentPanel
             }
             if (InvoiceValue6.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue6.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue6.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2364,7 +2456,7 @@ namespace Consignment.ConsignmentPanel
             }
             if (InvoiceValue7.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue7.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue7.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2373,7 +2465,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue8.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue8.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue8.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2382,7 +2474,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue9.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue9.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue9.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2391,7 +2483,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue10.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue10.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue10.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2400,7 +2492,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue11.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue11.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue11.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2409,7 +2501,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue12.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue12.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue12.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2418,7 +2510,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue13.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue13.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue13.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2427,7 +2519,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue14.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue14.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue14.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2436,7 +2528,7 @@ namespace Consignment.ConsignmentPanel
 
             if (InvoiceValue15.Text != "")
             {
-                if (!(Regex.IsMatch(InvoiceValue15.Text, @"^\d+(\.\d+)?$")))
+                if (!(Regex.IsMatch(InvoiceValue15.Text.Trim(), @"^\d+(,\d+)*(\.\d+)?$")))
                 {
                     ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Invoice Value not in correct format');", true);
                     check = 1;
@@ -2454,6 +2546,11 @@ namespace Consignment.ConsignmentPanel
             string spName = "";
             try
             {
+                if (Session["OTP"] == null)
+                {
+                    ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('OTP expired. Please generate OTP again and save.');", true);
+                    return;
+                }
                 if (txtCode.Text == Session["OTP"].ToString())
                 {
                     if (CheckInvoiceValue() == 1)
@@ -2472,14 +2569,19 @@ namespace Consignment.ConsignmentPanel
                             ParameterValue = new ArrayList();
                             spName = "Proc_BookLR";
                             ParameterName.Add("@Action"); ParameterValue.Add("MoveFromTMPtoMain");
-                            ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                            ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                             IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             if (IntResult > 0)
                             {
+                                string GroupBookId = GetBookIdByGroupId(Convert.ToInt64(Session["GroupSessionId"]));
                                 Session["GroupSessionId"] = null;
-                                Page.ClientScript.RegisterStartupScript(this.GetType(), Guid.NewGuid().ToString(), "alert('All Data SuccessFully inserted!');window.location='ReportViewer.aspx?BookId=" + MaxBookId() + "';", true);
-                                Session["PrintBookId"] = MaxBookId();
+                                Page.ClientScript.RegisterStartupScript(this.GetType(), Guid.NewGuid().ToString(), "alert('All Data SuccessFully inserted!');window.location='ReportViewer.aspx?BookId=" + GroupBookId + "';", true);
+                                Session["PrintBookId"] = GroupBookId;
                                 Clear();
+                            }
+                            else
+                            {
+                                ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('No pending LR found for this batch. Please check LR list before re-entering.');", true);
                             }
                         }
                     }
@@ -2546,7 +2648,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@BookLoading"); ParameterValue.Add(txtLoading.Text);
                                 ParameterName.Add("@GSTPay"); ParameterValue.Add(ddlGSTPay.SelectedValue);
                                 ParameterName.Add("@BookRemarks"); ParameterValue.Add(txtRemarks.Text);
-                                ParameterName.Add("@ProdName"); ParameterValue.Add(txtProduct.Text.Trim());
+                                ParameterName.Add("@ProdName"); ParameterValue.Add(txtProduct.Text.Trim()); SaveProduct(txtProduct.Text.Trim());
                                 ParameterName.Add("@UnitName"); ParameterValue.Add(ddlunit.SelectedValue);
                                 ParameterName.Add("@BookQty"); ParameterValue.Add(txtQty.Text);
                                 ParameterName.Add("@ActQty"); ParameterValue.Add(0);
@@ -2564,7 +2666,7 @@ namespace Consignment.ConsignmentPanel
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                                 if (IntResult > 0)
                                 {
-                                    string MaxBookId1 = MaxBookId();
+                                    string MaxBookId1 = GetBookIdByLrNo(TxtLrNo.Text);
                                     spName = "Proc_DocumentDetails";
 
                                     if (txtDocumentNo1.Text != "")
@@ -3105,7 +3207,7 @@ namespace Consignment.ConsignmentPanel
 
 
 
-                                    Page.ClientScript.RegisterStartupScript(this.GetType(), Guid.NewGuid().ToString(), "alert('Data SuccessFully inserted!');window.location='ReportViewer.aspx?BookId=" + MaxBookId() + "';", true);
+                                    Page.ClientScript.RegisterStartupScript(this.GetType(), Guid.NewGuid().ToString(), "alert('Data SuccessFully inserted!');window.location='ReportViewer.aspx?BookId=" + MaxBookId1 + "';", true);
                                     if (txtEwayBillNo.Text.Trim() != "")
                                     {
                                         Session["PrintBookId"] = MaxBookId1;
@@ -3169,7 +3271,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@BookDocNo"); ParameterValue.Add(txtDocNo.Text);
                                 ParameterName.Add("@BookLoading"); ParameterValue.Add(txtLoading.Text);
                                 ParameterName.Add("@BookRemarks"); ParameterValue.Add(txtRemarks.Text);
-                                ParameterName.Add("@ProdName"); ParameterValue.Add(txtProduct.Text.Trim());
+                                ParameterName.Add("@ProdName"); ParameterValue.Add(txtProduct.Text.Trim()); SaveProduct(txtProduct.Text.Trim());
                                 ParameterName.Add("@UnitName"); ParameterValue.Add(ddlunit.SelectedValue);
                                 ParameterName.Add("@BookQty"); ParameterValue.Add(txtQty.Text);
                                 ParameterName.Add("@ActQty"); ParameterValue.Add(0);
@@ -3732,7 +3834,7 @@ namespace Consignment.ConsignmentPanel
                                     Page.ClientScript.RegisterStartupScript(this.GetType(), Guid.NewGuid().ToString(), "alert('Data SuccessFully Updated!');window.location='ReportViewer.aspx?BookId=" + HFid.Value + "';", true);
                                     if (txtEwayBillNo.Text.Trim() != "")
                                     {
-                                        Session["PrintBookId"] = MaxBookId();
+                                        Session["PrintBookId"] = HFid.Value;
                                     }
                                     Clear();
                                 }
@@ -4402,7 +4504,7 @@ namespace Consignment.ConsignmentPanel
                     {
                         if (Session["GroupSessionId"] == null)
                         {
-                            Session["GroupSessionId"] = OTPNumb;
+                            Session["GroupSessionId"] = NewGroupId();
                         }
 
                         ParameterName = new ArrayList();
@@ -4430,7 +4532,7 @@ namespace Consignment.ConsignmentPanel
                         ParameterName.Add("@BookDocNo"); ParameterValue.Add(txtDocNo.Text);
                         ParameterName.Add("@BookLoading"); ParameterValue.Add(txtLoading.Text);
                         ParameterName.Add("@BookRemarks"); ParameterValue.Add(txtRemarks.Text);
-                        ParameterName.Add("@ProdName"); ParameterValue.Add(txtProduct.Text.Trim());
+                        ParameterName.Add("@ProdName"); ParameterValue.Add(txtProduct.Text.Trim()); SaveProduct(txtProduct.Text.Trim());
                         ParameterName.Add("@UnitName"); ParameterValue.Add(ddlunit.SelectedValue);
                         ParameterName.Add("@BookQty"); ParameterValue.Add(txtQty.Text);
                         ParameterName.Add("@ActQty"); ParameterValue.Add(0);
@@ -4443,7 +4545,7 @@ namespace Consignment.ConsignmentPanel
                         ParameterName.Add("@BookBillTo"); ParameterValue.Add(ddlBillto.SelectedValue);
                         ParameterName.Add("@Mtype"); ParameterValue.Add(ddlMode.SelectedValue);
                         ParameterName.Add("@UserId"); ParameterValue.Add(Convert.ToInt32(Session["UserId"]));
-                        ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                        ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                         ParameterName.Add("@DriverUID"); ParameterValue.Add(txtDriverAdhar.Text);
                         ParameterName.Add("@LCNo"); ParameterValue.Add(txtLCNo.Text);
                         IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
@@ -4459,7 +4561,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo1.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtDocumentNo2.Text != "")
@@ -4469,7 +4571,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo2.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtDocumentNo3.Text != "")
@@ -4479,7 +4581,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo3.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtDocumentNo4.Text != "")
@@ -4489,7 +4591,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo4.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtDocumentNo5.Text != "")
@@ -4499,7 +4601,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo5.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtDocumentNo6.Text != "")
@@ -4509,7 +4611,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo6.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4520,7 +4622,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo7.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4531,7 +4633,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo8.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4542,7 +4644,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo9.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4553,7 +4655,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo10.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4564,7 +4666,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo11.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4575,7 +4677,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo12.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4586,7 +4688,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo13.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4597,7 +4699,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo14.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4608,7 +4710,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@Action"); ParameterValue.Add("InsertTmp");
                                 ParameterName.Add("@LrNo"); ParameterValue.Add(TxtLrNo.Text);
                                 ParameterName.Add("@DocumentNo"); ParameterValue.Add(txtDocumentNo15.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4623,7 +4725,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate1.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue1.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit1.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtInvoiceNo2.Text != "")
@@ -4636,7 +4738,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate2.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue2.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit2.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtInvoiceNo3.Text != "")
@@ -4649,7 +4751,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate3.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue3.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit3.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtInvoiceNo4.Text != "")
@@ -4662,7 +4764,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate4.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue4.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit4.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtInvoiceNo5.Text != "")
@@ -4675,7 +4777,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate5.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue5.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit5.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtInvoiceNo6.Text != "")
@@ -4688,7 +4790,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate6.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue6.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit6.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4702,7 +4804,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate7.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue7.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit7.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4716,7 +4818,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate8.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue8.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit8.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4730,7 +4832,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate9.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue9.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit9.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4744,7 +4846,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate10.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue10.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit10.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4758,7 +4860,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate11.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue11.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit11.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4772,7 +4874,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate12.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue12.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit12.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4786,7 +4888,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate13.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue13.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit13.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4800,7 +4902,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate14.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue14.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit14.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4814,7 +4916,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@InvoiceDate"); ParameterValue.Add(InvoiceDate15.Text);
                                 ParameterName.Add("@InvoiceValue"); ParameterValue.Add(InvoiceValue15.Text);
                                 ParameterName.Add("@InvoiceUnit"); ParameterValue.Add(InvoiceUnit15.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4828,7 +4930,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo1.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate1.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate1.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtEwayBillNo2.Text != "")
@@ -4840,7 +4942,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo2.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate2.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate2.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtEwayBillNo3.Text != "")
@@ -4852,7 +4954,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo3.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate3.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate3.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtEwayBillNo4.Text != "")
@@ -4864,7 +4966,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo4.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate4.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate4.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             if (txtEwayBillNo5.Text != "")
@@ -4876,7 +4978,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo5.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate5.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate5.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             // 6
@@ -4889,7 +4991,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo6.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate6.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate6.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4903,7 +5005,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo7.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate7.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate7.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4917,7 +5019,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo8.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate8.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate8.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4931,7 +5033,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo9.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate9.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate9.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4945,7 +5047,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo10.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate10.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate10.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4959,7 +5061,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo11.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate11.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate11.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4973,7 +5075,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo12.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate12.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate12.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -4987,7 +5089,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo13.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate13.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate13.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -5001,7 +5103,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo14.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate14.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate14.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
 
@@ -5015,7 +5117,7 @@ namespace Consignment.ConsignmentPanel
                                 ParameterName.Add("@EwayBillNo"); ParameterValue.Add(txtEwayBillNo15.Text);
                                 ParameterName.Add("@BillDate"); ParameterValue.Add(txtEwayBillDate15.Text);
                                 ParameterName.Add("@BillUptoDate"); ParameterValue.Add(txtValidUptoDate15.Text);
-                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt32(Session["GroupSessionId"]));
+                                ParameterName.Add("@GroupId"); ParameterValue.Add(Convert.ToInt64(Session["GroupSessionId"]));
                                 IntResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                             }
                             ScriptManager.RegisterStartupScript(Page, Page.GetType(), "script", "alert('Data SuccessFully inserted!');", true);

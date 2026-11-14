@@ -92,6 +92,8 @@ namespace Consignment.ConsignmentPanel
                     mnuBranch.Visible = ((Convert.ToInt32((dt.Select("MenuName = 'Branch'").CopyToDataTable()).Rows[0]["List"])) == 1 ? true : false);
                     mnuSize.Visible = ((Convert.ToInt32((dt.Select("MenuName = 'Size'").CopyToDataTable()).Rows[0]["List"])) == 1 ? true : false);
                     mnuUnit.Visible = ((Convert.ToInt32((dt.Select("MenuName = 'Unit'").CopyToDataTable()).Rows[0]["List"])) == 1 ? true : false);
+                    DataRow[] drProduct = dt.Select("MenuName = 'Product'");
+                    mnuProduct.Visible = drProduct.Length > 0 && Convert.ToInt32(drProduct[0]["List"]) == 1;
                     mnuState.Visible = ((Convert.ToInt32((dt.Select("MenuName = 'State'").CopyToDataTable()).Rows[0]["List"])) == 1 ? true : false);
                     mnuParty.Visible = ((Convert.ToInt32((dt.Select("MenuName = 'Party'").CopyToDataTable()).Rows[0]["List"])) == 1 ? true : false);
                     mnuStation.Visible = ((Convert.ToInt32((dt.Select("MenuName = 'Station'").CopyToDataTable()).Rows[0]["List"])) == 1 ? true : false);

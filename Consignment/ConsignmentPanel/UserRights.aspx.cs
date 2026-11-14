@@ -87,6 +87,11 @@ namespace Consignment.ConsignmentPanel
             }
         }
 
+        // Menu ka right repeater me na ho (purane user ki row me NULL) to "koi right nahi" bhejo
+        private string RightsOf(Dictionary<string, string> dic, string menu)
+        {
+            return dic.ContainsKey(menu) ? dic[menu] : "0,0,0,0,0,0";
+        }
         #endregion
 
         #region[Events]
@@ -143,6 +148,11 @@ namespace Consignment.ConsignmentPanel
                 ParameterName.Add("@LCEntry"); ParameterValue.Add(dic["LCEntry"].ToString());
                 ParameterName.Add("@LCManagement"); ParameterValue.Add(dic["LC_Management"].ToString());
                 ParameterName.Add("@LCReport"); ParameterValue.Add(dic["LC_Report"].ToString());
+                // Ye teen pehle bheje nahi jaate the, isliye save par blank ho jaate the
+                ParameterName.Add("@VehicleDoc"); ParameterValue.Add(RightsOf(dic, "VehicleDoc"));
+                ParameterName.Add("@BranchwiseParty"); ParameterValue.Add(RightsOf(dic, "BranchwiseParty"));
+                ParameterName.Add("@POD"); ParameterValue.Add(RightsOf(dic, "POD"));
+                ParameterName.Add("@Product"); ParameterValue.Add(RightsOf(dic, "Product"));
                 intResult = con.ExecuteQueryByStoreProcedureWithParameter(spName, ParameterName, ParameterValue);
                 if (intResult > 0)
                 {

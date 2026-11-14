@@ -11,12 +11,12 @@ namespace Consignment.Model
 {
     public class GTropyAPIService
     {
-        private static readonly HttpClient client = new HttpClient();
+        // Ek hi shared HttpClient, 20 sec timeout ke saath - GTropy API slow ho to LR save hang na ho
+        private static readonly HttpClient client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
 
         public async Task SendToGtropyAPI(string vehicle, string invoice, DateTime startDateTime, string origin, string destination)
         //public async Task SendToGtropyAPI()
         {
-            HttpClient client = new HttpClient();
             var url = "https://ctyf.co.in/api/uploadjsontrip";
 
             var payload = new

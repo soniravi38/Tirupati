@@ -159,6 +159,11 @@ namespace Consignment.ConsignmentPanel
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl mnuUnit;
 
         /// <summary>
+        /// mnuProduct control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl mnuProduct;
+
+        /// <summary>
         /// mnuSize control.
         /// </summary>
         /// <remarks>

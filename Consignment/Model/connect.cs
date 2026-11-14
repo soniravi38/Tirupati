@@ -88,7 +88,8 @@ namespace Consignment.Model
                 {
                     con.Open();
                 }
-                SqlConnection.ClearPool(con);
+                // ClearPool yahan har call par hata diya: isse har query nayi physical connection
+                // banati thi (remote SQL server par slow). Pool ab sirf error ke case me clear hota hai.
             }
             catch (Exception ex)
             {

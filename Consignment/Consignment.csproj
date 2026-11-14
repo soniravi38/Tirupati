@@ -304,6 +304,7 @@
     <Content Include="ConsignmentPanel\AddLrManagement.aspx" />
     <Content Include="ConsignmentPanel\AddManualLRManagement.aspx" />
     <Content Include="ConsignmentPanel\AddManualLRManagementBulk.aspx" />
+    <Content Include="ConsignmentPanel\AddProduct.aspx" />
     <Content Include="ConsignmentPanel\AddSize.aspx" />
     <Content Include="ConsignmentPanel\AddState.aspx" />
     <Content Include="ConsignmentPanel\AddStation.aspx" />
@@ -335,6 +336,7 @@
     <Content Include="ConsignmentPanel\ListLcManagement.aspx" />
     <Content Include="ConsignmentPanel\ListLrManagement.aspx" />
     <Content Include="ConsignmentPanel\ListManualLRManagement.aspx" />
+    <Content Include="ConsignmentPanel\ListProduct.aspx" />
     <Content Include="ConsignmentPanel\ListSize.aspx" />
     <Content Include="ConsignmentPanel\ListState.aspx" />
     <Content Include="ConsignmentPanel\ListStation.aspx" />
@@ -2420,6 +2422,7 @@
     <Content Include="Default.aspx" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
+    <Content Include="KeepAlive.ashx" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -2802,6 +2805,12 @@
     <Compile Include="ConsignmentPanel\AddManualLRManagementBulk.aspx.designer.cs">
       <DependentUpon>AddManualLRManagementBulk.aspx</DependentUpon>
     </Compile>
+    <Compile Include="ConsignmentPanel\AddProduct.aspx.cs">
+      <DependentUpon>AddProduct.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ConsignmentPanel\AddProduct.aspx.designer.cs">
+      <DependentUpon>AddProduct.aspx</DependentUpon>
+    </Compile>
     <Compile Include="ConsignmentPanel\AddSize.aspx.cs">
       <DependentUpon>AddSize.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -3018,6 +3027,12 @@
     </Compile>
     <Compile Include="ConsignmentPanel\ListManualLRManagement.aspx.designer.cs">
       <DependentUpon>ListManualLRManagement.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ConsignmentPanel\ListProduct.aspx.cs">
+      <DependentUpon>ListProduct.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ConsignmentPanel\ListProduct.aspx.designer.cs">
+      <DependentUpon>ListProduct.aspx</DependentUpon>
     </Compile>
     <Compile Include="ConsignmentPanel\ListSize.aspx.cs">
       <DependentUpon>ListSize.aspx</DependentUpon>
